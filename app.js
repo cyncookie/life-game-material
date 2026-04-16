@@ -196,6 +196,11 @@ let pendingTask = null;
 let rewardMode = "random";
 let syncTimeoutId = null;
 let isHydratingRemote = true;
+let syncUiState = {
+  status: "idle",
+  text: "同步状态：待命",
+  lastSyncText: "最后同步：尚未开始",
+};
 
 const root = document.documentElement;
 const themeSelect = document.querySelector("#themeSelect");
@@ -208,6 +213,10 @@ const currentTime = document.querySelector("#currentTime");
 const dayPhase = document.querySelector("#dayPhase");
 const companionInput = document.querySelector("#companionInput");
 const taskCountInput = document.querySelector("#taskCountInput");
+const decreaseTaskCountButton = document.querySelector("#decreaseTaskCountButton");
+const increaseTaskCountButton = document.querySelector("#increaseTaskCountButton");
+const exportSaveButton = document.querySelector("#exportSaveButton");
+const uploadLocalSaveButton = document.querySelector("#uploadLocalSaveButton");
 const drawTasksButton = document.querySelector("#drawTasksButton");
 const redrawTasksButton = document.querySelector("#redrawTasksButton");
 const taskTypeSelect = document.querySelector("#taskTypeSelect");
@@ -250,6 +259,9 @@ const generateJournalButton = document.querySelector("#generateJournalButton");
 const appendTaskButton = document.querySelector("#appendTaskButton");
 const appendRewardButton = document.querySelector("#appendRewardButton");
 const journalEditor = document.querySelector("#journalEditor");
+const syncStatusBox = document.querySelector("#syncStatusBox");
+const syncStatusText = document.querySelector("#syncStatusText");
+const lastSyncText = document.querySelector("#lastSyncText");
 const rewardDialog = document.querySelector("#rewardDialog");
 const rewardDialogTitle = document.querySelector("#rewardDialogTitle");
 const rewardChoices = document.querySelector("#rewardChoices");
@@ -290,12 +302,28 @@ companionInput.addEventListener("input", (event) => {
   saveAndRender();
 });
 
-taskCountInput.addEventListener("input", (event) => {
-  const parsed = Number.parseInt(event.target.value, 10);
-  state.taskTargetCount = Number.isFinite(parsed) ? clampTaskCount(parsed) : 4;
+taskCountInput.addEventListener("change", applyTaskCountFromInput);
+taskCountInput.addEventListener("blur", applyTaskCountFromInput);
+taskCountInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    applyTaskCountFromInput();
+  }
+});
+
+decreaseTaskCountButton.addEventListener("click", () => {
+  state.taskTargetCount = clampTaskCount(state.taskTargetCount - 1);
   taskCountInput.value = state.taskTargetCount;
   saveAndRender();
 });
+
+increaseTaskCountButton.addEventListener("click", () => {
+  state.taskTargetCount = clampTaskCount(state.taskTargetCount + 1);
+  taskCountInput.value = state.taskTargetCount;
+  saveAndRender();
+});
+
+exportSaveButton.addEventListener("click", exportCurrentSave);
+uploadLocalSaveButton.addEventListener("click", uploadCurrentLocalSaveToCloud);
 
 drawTasksButton.addEventListener("click", () => {
   state.todayTasks = generateTodayTasks(state.taskTargetCount);
@@ -389,6 +417,7 @@ function render() {
   infuseGemButton.disabled = new Set(state.gemLedger.map((entry) => entry.gem)).size < 1;
   decorateStickerButton.disabled = state.unlockedStickers.length < 1;
   journalEditor.value = state.journalDrafts[getTodayKey()] || buildJournalDraft();
+  renderSyncUi();
 
   renderTodayTasks();
   renderPool(taskPool, state.taskPool, "task");
@@ -1134,14 +1163,70 @@ function persistLocalState() {
 
 function scheduleRemoteSync() {
   if (isHydratingRemote) return;
+  setSyncUi("loading", "同步状态：自动保存中", syncUiState.lastSyncText);
   window.clearTimeout(syncTimeoutId);
   syncTimeoutId = window.setTimeout(async () => {
     try {
       await window.lifeGameSync.upsertRemoteSave(state);
+      const timeText = `最后同步：${formatNow()}`;
+      setSyncUi("success", "同步状态：自动保存成功", timeText);
+      render();
     } catch (error) {
       console.error("Failed to sync save to Supabase:", error);
+      setSyncUi("error", "同步状态：自动保存失败", "最后同步：请稍后重试");
+      render();
     }
   }, 400);
+}
+
+function exportCurrentSave() {
+  const payload = JSON.stringify(state, null, 2);
+  const blob = new Blob([payload], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const dateStamp = new Intl.DateTimeFormat("sv-SE").format(new Date());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `life-game-save-${dateStamp}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function uploadCurrentLocalSaveToCloud() {
+  try {
+    setSyncUi("loading", "同步状态：正在上传到云端", syncUiState.lastSyncText);
+    render();
+    persistLocalState();
+    await window.lifeGameSync.upsertRemoteSave(state);
+    const timeText = `最后同步：${formatNow()}`;
+    setSyncUi("success", "同步状态：手动上传成功", timeText);
+    state.companionLine = "当前这份本地存档已经手动上传到云端了。另一台设备刷新后就能读到。";
+    render();
+  } catch (error) {
+    console.error("Failed to upload local save to Supabase:", error);
+    setSyncUi("error", "同步状态：手动上传失败", "最后同步：上传未完成");
+    state.companionLine = "上传云端失败了。可以稍后再试，或者打开浏览器控制台看错误信息。";
+    render();
+  }
+}
+
+function renderSyncUi() {
+  if (!syncStatusBox) return;
+  syncStatusBox.classList.remove("success", "error", "loading");
+  if (syncUiState.status !== "idle") {
+    syncStatusBox.classList.add(syncUiState.status);
+  }
+  syncStatusText.textContent = syncUiState.text;
+  lastSyncText.textContent = syncUiState.lastSyncText;
+}
+
+function setSyncUi(status, text, lastText) {
+  syncUiState = {
+    status,
+    text,
+    lastSyncText: lastText,
+  };
 }
 
 function feedHatcheryWithShell() {
@@ -1210,6 +1295,14 @@ function colorFromString(text) {
 
 function clampTaskCount(count) {
   return Math.min(20, Math.max(1, count));
+}
+
+function applyTaskCountFromInput() {
+  const cleaned = String(taskCountInput.value || "").replace(/[^\d]/g, "");
+  const parsed = Number.parseInt(cleaned, 10);
+  state.taskTargetCount = Number.isFinite(parsed) ? clampTaskCount(parsed) : defaultState.taskTargetCount;
+  taskCountInput.value = state.taskTargetCount;
+  saveAndRender();
 }
 
 function generateTodayTasks(targetCount = 4) {

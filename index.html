@@ -40,7 +40,11 @@
           </label>
           <label>
             今日任务数量
-            <input id="taskCountInput" type="number" min="1" max="20" step="1" value="4" />
+            <div class="count-control">
+              <button id="decreaseTaskCountButton" class="ghost" type="button">-</button>
+              <input id="taskCountInput" type="text" inputmode="numeric" pattern="[0-9]*" value="4" />
+              <button id="increaseTaskCountButton" class="ghost" type="button">+</button>
+            </div>
           </label>
           <a class="ghost link-button" href="./diary.html">打开周/月日记</a>
           <button id="drawTasksButton" class="primary">✦ 开始今天</button>
@@ -96,6 +100,16 @@
           <div class="panel-head">
             <h2>📝 今日存档</h2>
             <p>网页先起草，你可以随时加句子、改内容、补网页之外的事情。</p>
+          </div>
+          <div class="save-tools">
+            <div class="shell-actions">
+              <button id="exportSaveButton" class="ghost" type="button">导出存档 JSON</button>
+              <button id="uploadLocalSaveButton" class="ghost" type="button">上传本地存档到云端</button>
+            </div>
+            <div class="sync-status" id="syncStatusBox">
+              <strong id="syncStatusText">同步状态：待命</strong>
+              <span id="lastSyncText">最后同步：尚未开始</span>
+            </div>
           </div>
           <div class="shell-actions">
             <button id="generateJournalButton" class="ghost">生成今日草稿</button>
