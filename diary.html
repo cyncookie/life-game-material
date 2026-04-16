@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>生活游戏助手 · 日记</title>
+    <link rel="stylesheet" href="./diary.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero card">
+        <div>
+          <p class="eyebrow">JOURNAL ARCHIVE</p>
+          <h1>周/月日记</h1>
+          <p class="hero-copy">左边浏览周或月，右边查看并编辑单日正文。</p>
+        </div>
+        <div class="controls">
+          <label>
+            视图
+            <select id="viewMode">
+              <option value="week">按周</option>
+              <option value="month">按月</option>
+            </select>
+          </label>
+          <label id="weekPickerWrap">
+            选择周
+            <input id="weekPicker" type="week" />
+          </label>
+          <label id="monthPickerWrap" hidden>
+            选择月
+            <input id="monthPicker" type="month" />
+          </label>
+          <div class="nav-row">
+            <button id="prevButton" class="ghost">上一页</button>
+            <button id="todayButton" class="ghost">回到今天</button>
+            <button id="nextButton" class="ghost">下一页</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="split-layout">
+        <section class="card panel">
+          <div class="panel-head">
+            <h2 id="rangeTitle">本周</h2>
+            <p id="rangeHint">左边保留周/月格子视图，右边看完整日记。</p>
+          </div>
+          <div id="grid" class="day-grid"></div>
+        </section>
+
+        <section class="card panel editor-panel">
+          <div class="panel-head">
+            <h2 id="selectedTitle">选择一天</h2>
+            <p id="selectedMeta">右边会显示该天全文。</p>
+          </div>
+          <textarea id="selectedEditor" class="selected-editor" placeholder="先从左边选一天。"></textarea>
+        </section>
+      </main>
+    </div>
+
+    <template id="dayItemTemplate">
+      <article class="day-cell">
+        <div class="day-item-head">
+          <strong class="day-label"></strong>
+          <span class="day-tag"></span>
+        </div>
+        <p class="day-preview"></p>
+      </article>
+    </template>
+
+    <script src="./supabase-sync.js"></script>
+    <script src="./diary.js"></script>
+  </body>
+</html>

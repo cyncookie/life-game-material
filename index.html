@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>生活游戏助手</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero card">
+        <div>
+          <p id="themeBadge" class="eyebrow">COAST CAMP</p>
+          <div class="time-ribbon">
+            <span id="currentDate">--</span>
+            <span id="currentTime">--:--</span>
+            <span id="dayPhase">白昼阶段</span>
+          </div>
+          <h1 id="heroTitle">潮汐营地终端</h1>
+          <p id="heroCopy" class="hero-copy">
+            一个把日常任务变成抽取、奖励、收集与伙伴陪伴的小型终端。
+          </p>
+        </div>
+        <div class="hero-controls">
+          <label>
+            主题预设
+            <select id="themeSelect">
+              <option value="coast">海边露营</option>
+              <option value="digital">数码驯兽师</option>
+              <option value="splat">涂地打工</option>
+            </select>
+          </label>
+          <label>
+            主题别名
+            <input id="themeInput" type="text" placeholder="给这个主题起个你自己的名字" />
+          </label>
+          <label>
+            伙伴名字
+            <input id="companionInput" type="text" />
+          </label>
+          <label>
+            今日任务数量
+            <input id="taskCountInput" type="number" min="1" max="20" step="1" value="4" />
+          </label>
+          <a class="ghost link-button" href="./diary.html">打开周/月日记</a>
+          <button id="drawTasksButton" class="primary">✦ 开始今天</button>
+        </div>
+      </header>
+
+      <section class="stats-grid">
+        <article class="stat card">
+          <span>◌ 累计完成</span>
+          <strong id="completedCount">0</strong>
+        </article>
+        <article class="stat card">
+          <span>🪶 飞羽</span>
+          <strong id="featherCount">0</strong>
+        </article>
+        <article class="stat card">
+          <span>⌁ 赦免卡</span>
+          <strong id="skipCardCount">0</strong>
+        </article>
+        <article class="stat card">
+          <span>✧ 不同宝石</span>
+          <strong id="uniqueGemCount">0</strong>
+        </article>
+      </section>
+
+      <main class="dashboard compact-dashboard">
+        <section class="panel card focus-panel">
+          <div class="panel-head">
+            <h2>✦ 今日任务</h2>
+            <p id="todayHint">点击“开始今天”随机抽取 4 个任务。</p>
+          </div>
+          <div class="panel-tools">
+            <button id="redrawTasksButton" class="ghost">🎲 重抽剩余</button>
+          </div>
+          <div id="todayTasks" class="task-list"></div>
+        </section>
+
+        <section class="panel card focus-panel">
+          <div class="panel-head">
+            <h2>☍ 伙伴频道</h2>
+            <p id="companionHint">这是你占优势的一对一支援线路。</p>
+          </div>
+          <div class="message-box">
+            <p id="companionLine">准备就绪。今天也会有新的宝石入账。</p>
+          </div>
+          <div class="story-box">
+            <span>最近剧情节点</span>
+            <p id="storyLine">尚未触发剧情事件。</p>
+          </div>
+        </section>
+
+        <section class="panel card wide focus-panel">
+          <div class="panel-head">
+            <h2>📝 今日存档</h2>
+            <p>网页先起草，你可以随时加句子、改内容、补网页之外的事情。</p>
+          </div>
+          <div class="shell-actions">
+            <button id="generateJournalButton" class="ghost">生成今日草稿</button>
+            <button id="appendTaskButton" class="ghost">补充完成事项</button>
+            <button id="appendRewardButton" class="ghost">补充奖励事项</button>
+          </div>
+          <textarea id="journalEditor" class="journal-editor" placeholder="这里会生成今天的存档草稿。你也可以直接手动写。"></textarea>
+        </section>
+
+        <section class="panel card wide systems-panel">
+          <div class="panel-head">
+            <h2>系统页签</h2>
+            <p>下面这些系统都还在，只是不再同时铺满整页。</p>
+          </div>
+          <div class="tab-bar">
+            <button class="tab-button active" type="button" data-tab="tasks">任务池</button>
+            <button class="tab-button" type="button" data-tab="rewards">奖励池</button>
+            <button class="tab-button" type="button" data-tab="quests">支线与工坊</button>
+            <button class="tab-button" type="button" data-tab="hatchery">孵化槽</button>
+            <button class="tab-button" type="button" data-tab="codex">图鉴</button>
+          </div>
+
+          <div class="tab-panels">
+            <section class="tab-panel active" data-tab-panel="tasks">
+          <div class="panel-head">
+            <h2 id="taskPoolTitle">营地任务池</h2>
+            <p>可重复的留着循环，一次性的做完就归档。</p>
+          </div>
+          <form id="taskForm" class="stack-form">
+            <input id="taskInput" type="text" placeholder="新增一个任务" />
+            <div class="inline-controls">
+              <select id="taskTypeSelect">
+                <option value="repeatable">可重复任务</option>
+                <option value="one-time">一次性任务</option>
+              </select>
+              <button type="submit">加入任务池</button>
+            </div>
+          </form>
+          <div id="taskPool" class="chip-list"></div>
+            </section>
+
+            <section class="tab-panel" data-tab-panel="rewards">
+          <div class="panel-head">
+            <h2 id="rewardPoolTitle">营地奖励池</h2>
+            <p>即时享受直接领取，事件支线会进入待完成面板。</p>
+          </div>
+          <form id="rewardForm" class="stack-form">
+            <input id="rewardInput" type="text" placeholder="新增一个奖励" />
+            <div class="inline-controls">
+              <select id="rewardTypeSelect">
+                <option value="repeatable">可重复奖励</option>
+                <option value="one-time">一次性奖励</option>
+              </select>
+              <select id="rewardModeSelect">
+                <option value="instant">即时享受</option>
+                <option value="quest">事件支线</option>
+              </select>
+              <button type="submit">加入奖励池</button>
+            </div>
+          </form>
+          <div id="rewardPool" class="chip-list"></div>
+            </section>
+
+            <section class="tab-panel" data-tab-panel="quests">
+          <div class="panel-head">
+            <h2>🎁 已解锁支线</h2>
+            <p>事件型奖励会先落到这里，做完只拿轻反馈，不再套主循环。</p>
+          </div>
+          <div class="codex-summary side-summary">
+            <article class="codex-stat">
+              <span>🗂️ 待完成</span>
+              <strong id="questCount">0</strong>
+            </article>
+            <article class="codex-stat">
+              <span>🐚 贝壳收集</span>
+              <strong id="shellCount">0</strong>
+            </article>
+          </div>
+          <div id="questBoard" class="task-list"></div>
+          <div class="shell-workshop">
+            <div class="panel-head compact-head">
+              <h3>🐚 贝壳工坊</h3>
+              <p>给贝壳一点很轻的用途，不把它做成肝系统。</p>
+            </div>
+            <div class="shell-actions">
+              <button id="redeemStickerButton" class="ghost">用 3 枚贝壳换贴纸</button>
+              <button id="redeemLineButton" class="ghost">用 5 枚贝壳解锁台词</button>
+            </div>
+            <div class="codex-summary side-summary">
+              <article class="codex-stat">
+                <span>🪪 已得贴纸</span>
+                <strong id="stickerCount">0</strong>
+              </article>
+              <article class="codex-stat">
+                <span>💬 特殊台词</span>
+                <strong id="specialLineCount">0</strong>
+              </article>
+            </div>
+            <div id="stickerBoard" class="chip-list"></div>
+          </div>
+            </section>
+
+            <section class="tab-panel" data-tab-panel="hatchery">
+          <div class="panel-head">
+            <h2>🥚 孵化槽</h2>
+            <p>用一点贝壳和宝石光慢慢养出陪伴物，不做重经营。</p>
+          </div>
+          <div class="hatchery-shell">
+            <div class="hatchery-visual" id="hatcheryVisual">🥚</div>
+            <div class="hatchery-info">
+              <div class="task-headline">
+                <h3 id="petName">潮汐蛋</h3>
+                <span class="task-tag" id="petStage">蛋期</span>
+              </div>
+              <p id="petMood" class="task-meta">状态稳定，正在等待一点点照顾。</p>
+              <div class="growth-track">
+                <div id="growthFill" class="growth-fill"></div>
+              </div>
+              <p id="growthText" class="task-meta">成长度 0 / 6</p>
+            </div>
+          </div>
+          <div class="shell-actions">
+            <button id="feedShellButton" class="ghost">🐚 喂 1 枚贝壳</button>
+            <button id="infuseGemButton" class="ghost">💎 注入宝石光</button>
+            <button id="decorateStickerButton" class="ghost">🪪 贴上喜欢的贴纸</button>
+          </div>
+          <div id="petDecor" class="chip-list"></div>
+            </section>
+
+            <section class="tab-panel" data-tab-panel="codex">
+          <div class="panel-head">
+            <h2>◈ 宝石图鉴</h2>
+            <p>一边记录掉落，一边看哪些宝石还没收集到。</p>
+          </div>
+          <div class="codex-summary">
+            <article class="codex-stat">
+              <span>✨ 已收集</span>
+              <strong id="collectedGemCount">0</strong>
+            </article>
+            <article class="codex-stat">
+              <span>🌫️ 未收集</span>
+              <strong id="missingGemCount">0</strong>
+            </article>
+          </div>
+          <div id="gemCodex" class="gem-codex"></div>
+          <div id="gemLedger" class="ledger"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="rewardDialog" class="reward-dialog">
+      <form method="dialog" class="dialog-shell">
+        <div class="dialog-head">
+          <p class="eyebrow">REWARD EVENT</p>
+          <h3 id="rewardDialogTitle">选择你的奖励</h3>
+        </div>
+        <div class="shell-actions dialog-tools">
+          <button id="rerollRewardButton" class="ghost" type="button">🎲 重抽 3 个</button>
+          <button id="showAllRewardsButton" class="ghost" type="button">📚 从全部奖励改选</button>
+          <button id="addInstantRewardButton" class="ghost" type="button">➕ 临时新增并领取</button>
+        </div>
+        <div id="rewardChoices" class="reward-choices"></div>
+        <button class="ghost" value="cancel">先不选</button>
+      </form>
+    </dialog>
+
+    <template id="taskCardTemplate">
+      <article class="task-card">
+        <div class="task-main">
+          <span class="task-icon">◌</span>
+          <div>
+            <div class="task-headline">
+              <h3 class="task-name"></h3>
+              <span class="task-tag"></span>
+            </div>
+            <p class="task-meta"></p>
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="primary complete-button">完成</button>
+          <button class="ghost feather-button">用飞羽</button>
+        </div>
+      </article>
+    </template>
+
+    <template id="questCardTemplate">
+      <article class="task-card">
+        <div class="task-main">
+          <span class="task-icon">🎁</span>
+          <div>
+            <div class="task-headline">
+              <h3 class="quest-name"></h3>
+              <span class="task-tag quest-tag"></span>
+            </div>
+            <p class="quest-meta"></p>
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="primary complete-quest-button">完成支线</button>
+          <button class="ghost discard-quest-button">移出面板</button>
+        </div>
+      </article>
+    </template>
+
+    <script src="./supabase-sync.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
